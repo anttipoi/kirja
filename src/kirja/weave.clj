@@ -1,6 +1,7 @@
 (ns kirja.weave
   (:use [kirja.common :only [source-files
-                             chunk-stream]])
+                             chunk-stream
+                             output-file]])
   (:require [clojure.java.io :as io]
             [clojure.string :as str])
   (:import [java.io File]
@@ -26,19 +27,6 @@
           mdp (MarkdownProcessor.)]
       (.write out-writer (.markdown mdp doc-converted)))))
 
-(defn output-file
-  "returns output file corresponding to source file"
-  [^File source-file ^File source-dir ^File output-dir ^String suffix]
-  (let [source-path (.getAbsolutePath source-file)
-        source-dir-path (.getAbsolutePath source-dir)
-        output-dir-path (.getAbsolutePath output-dir)
-        output-path (-> source-path
-                        (str/replace source-dir-path output-dir-path)
-                        (str/replace #"\.[^\.]*$" suffix))
-        output-file (File. output-path)
-        parent-dir (.getParentFile output-file)]
-    (.mkdirs parent-dir)
-    output-file))
 
 (defn weave
   [source-dir-name output-dir-name]
