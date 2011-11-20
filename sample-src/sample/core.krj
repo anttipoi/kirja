@@ -1,0 +1,42 @@
+# Sample - an example to rule them all.
+
+Outside the '<<'-notation we are in markdown mode. Anything written here
+gets treated as mark-up and is spit out to documentation.
+
+'<<C>>' -blocks are code. They are pretty-printed verbatim to doc output
+and the actual code files are generated from them.
+
+Code blocks have names and they include one another.
+
+<<C main>>
+<<include ns-riddle>>
+<<include bindables>>
+<<include api>>
+<<end>>
+
+## API
+
+Here's the beef. The biggies: here we explain what this library does. We also
+describe the highlevel ideas of getting things done.
+
+Postpone details later.
+
+<<C api>>
+(defn do-it
+  "perform sone action. args can be anything."
+  [args]
+  42)
+<<end>>
+
+## Standard decorations
+
+<<C ns-riddle>>
+(ns sample.core)
+<<end>>
+
+## Bindable public variables
+
+<<C bindables>>
+(def ^{:dynamic true
+       :doc "this you can bind"} *variable* true)
+<<end>>
