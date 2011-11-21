@@ -8,10 +8,13 @@
            [com.petebevin.markdown MarkdownProcessor]))
 
 (defn chunk-to-md
-  [[kind chunk-string]]
-  (if (= kind :doc)
-    chunk-string
-    (str "    " (str/replace chunk-string #"\n" "\n    "))))
+  [{:keys [type name body]}]
+  (if (= type :doc)
+    (str/join "\n" body)
+    (str/join "\n" (concat
+                    [(str "    <<" name ">>")]
+                    (map #(str "    " %) body)
+                    ["    <<end>>"]))))
 
 (defn convert-code-chunks
   [chunks]
