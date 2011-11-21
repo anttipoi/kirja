@@ -3,12 +3,12 @@
 Outside the '<<'-notation we are in markdown mode. Anything written here
 gets treated as mark-up and is spit out to documentation.
 
-'<<C>>' -blocks are code. They are pretty-printed verbatim to doc output
+'<<>>' -blocks are code. They are pretty-printed verbatim to doc output
 and the actual code files are generated from them.
 
 Code blocks have names and they include one another.
 
-<<C main>>
+<<main>>
 <<include ns-riddle>>
 <<include bindables>>
 <<include api>>
@@ -21,7 +21,7 @@ describe the highlevel ideas of getting things done.
 
 Postpone details later.
 
-<<C api>>
+<<api>>
 (defn do-it
   "perform sone action. args can be anything."
   [args]
@@ -30,13 +30,13 @@ Postpone details later.
 
 ## Standard decorations
 
-<<C ns-riddle>>
+<<ns-riddle>>
 (ns sample.core)
 <<end>>
 
 ## Bindable public variables
 
-<<C bindables>>
+<<bindables>>
 (def ^{:dynamic true
        :doc "this you can bind"} *variable* true)
 <<end>>
