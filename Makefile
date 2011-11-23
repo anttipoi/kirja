@@ -8,7 +8,8 @@ weave:
 tangle:
 	lein run :tangle $(SRC_DIR) $(OUTPUT_SRC_DIR)
 
+# Do not clean src dir, since otherwise kirja won't run
 clean:
-	rm -rf $(OUTPUT_DOC_DIR)/* $(OUTPUT_SRC_DIR)/*
+	rm -rf $(OUTPUT_DOC_DIR)/* 
 
 .PHONY: weave tangle clean
