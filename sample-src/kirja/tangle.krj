@@ -1,3 +1,4 @@
+<<main>>
 (ns kirja.tangle
   (:use [kirja.common :only [source-files
                              chunk-stream
@@ -55,3 +56,4 @@ code chunks. Ignore doc chunks."
       (tangle-file source-f (output-file source-f source-dir output-dir ".clj")))))
 
 
+<<end>>

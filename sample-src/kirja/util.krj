@@ -1,3 +1,4 @@
+<<main>>
 (ns kirja.util
   (:require [clojure.java.io :as io])
   (:import [java.io File]))
@@ -30,3 +31,4 @@
   (ensure-parent-directories-exist out)
   (io/copy in out))
 
+<<end>>

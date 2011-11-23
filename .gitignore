@@ -4,5 +4,4 @@ pom.xml
 /classes/
 .lein-failures
 .lein-deps-sum
-sample-clojure/
-sample-output/
+doc
