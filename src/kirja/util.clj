@@ -1,0 +1,31 @@
+(ns kirja.util
+  (:require [clojure.java.io :as io])
+  (:import [java.io File]))
+
+(defn ensure-parent-directories-exist
+  "mkdir -p for the parent of file."
+  [^File file]
+  (.. file getParentFile mkdirs))
+  
+
+(defmacro with-resource-stream
+  "evaluates body with resource-symbol bound to an InputStream for resource."
+  [[resource-symbol resource-name] & body]
+  `(with-open [~resource-symbol (-> (Thread/currentThread)
+                                    (.getContextClassLoader)
+                                    (.getResourceAsStream ~resource-name))]
+     ~@body))
+
+(defn copy-resource
+  "copies resource resource-name to output-file."
+  [^String resource-name ^File output-file]
+  (ensure-parent-directories-exist output-file)
+  (with-resource-stream [st resource-name]
+    (with-open [out-stream (io/output-stream output-file)]
+      (io/copy st out-stream))))
+
+(defn copy-file
+  "copies file in to out, creating parent directories if needed."
+  [^File in ^File out]
+  (ensure-parent-directories-exist out)
+  (io/copy in out))

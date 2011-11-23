@@ -1,6 +1,5 @@
 weave:
 	lein run :weave sample-src sample-output
-	cp sample-src/catalog.index sample-output
 
 copy-resources:
 	cp -R resources/* sample-output
