@@ -14,7 +14,7 @@
     var append_chapter_to_toc = function(chapter) {
         var chapter_id = "#" + chapterId(chapter)
         $("<li>" + chapter + "</li>").appendTo("#contents ul").click(function() {
-            $("html").animate({
+            $("html,body").animate({
                 scrollTop: $(chapter_id).offset().top
             }, 1000);
         });
