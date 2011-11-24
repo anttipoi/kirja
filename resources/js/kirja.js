@@ -13,6 +13,8 @@
 
     var append_chapter_to_book = function(chapter) {
         var url = chapter.replace('.', '/') + ".html"
-        $("#book").load(url);
+        var chapter_id = "chapter_" + chapter.replace('.','_');
+        $("<div class='chapter' id='" + chapter_id + "'></div>").appendTo("#book");
+        $("#" + chapter_id).load(url);
     };
 })(jQuery)
