@@ -2,7 +2,7 @@ body {font-family:Helvetica, Arial, sans-serif}
 
 #main {width:1024px; margin:10px}
 
-#contents {float:left; width: 200px}
+#contents {position:fixed; left:10px; top:10px; width: 200px}
 
 #contents li {background-color: #ddd; margin-bottom: 1px}
 
