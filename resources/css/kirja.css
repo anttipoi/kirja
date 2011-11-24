@@ -4,7 +4,7 @@ body {font-family:Helvetica, Arial, sans-serif}
 
 #contents {position:fixed; left:10px; top:10px; width: 200px}
 
-#contents li {background-color: #ddd; margin-bottom: 1px}
+#contents li {background-color: #ddd; cursor: pointer; margin-bottom: 1px}
 
 #book {float:right; width: 816px; padding: 3px; border-left: 1px solid black}
 
