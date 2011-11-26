@@ -12,12 +12,16 @@
   (str (str/join "\n" body)
        "\n"))
 
+(defn escape-backslash
+  [text]
+  (doall (str/replace text "\\" "\\\\")))
+
 (defn expand-includes
   [chunks-map text]
   (str/replace text #"(?m)^<<include (.*)>>" (fn [match] (if (= 1 (count match))
                                                       (first match)
                                                       (let [{body :body} (get chunks-map (second match))]
-                                                        (body-to-str body))))))
+                                                        (escape-backslash (body-to-str body)))))))
 
 (defn expand-chunk
   "Given chunk and a mapping from chunk names to chunks, return the expanded
