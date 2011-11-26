@@ -8,14 +8,17 @@ body {font-family:Helvetica, Arial, sans-serif}
 
 #book {float:right; width: 816px; padding: 3px; border-left: 1px solid black}
 
-#book h1 {font-size: 140%; margin: 10px 0 10px 0}
+#book em {font-weight: bold}
 
-#book h2 {font-size: 120%; margin: 5px 0 5px 0}
+#book h1 {font-size: 200%; margin: 10px 0 10px 0}
+
+#book h2 {font-size: 140%; margin: 10px 0 5px 0}
 
 #book .chapter {border-bottom: 1px solid black; padding: 10px 0 10px 0}
 
-#book p {margin: 3px 0 0 0}
+#book p {margin: 5px 0 0 20px}
 
-#book pre {margin: 2px 0 2px 20px}
+#book pre {margin: 10px 0 10px 40px}
 
+#book code {font-family: Courier}
 
