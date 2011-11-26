@@ -10,7 +10,6 @@
             [clojure.string :as str])
   (:import [java.io File PushbackReader]
            [com.petebevin.markdown MarkdownProcessor]))
-
 (defn chunk-to-md
   [{:keys [type name body]}]
   (if (= type :doc)
@@ -45,7 +44,7 @@
   (println "copying resources ")
   (for [r resource-names]
     (copy-resource r (File. output-dir r))))
-  
+
 (defn weave
   [source-dir-name output-dir-name]
   (println (str "weave in " source-dir-name))
