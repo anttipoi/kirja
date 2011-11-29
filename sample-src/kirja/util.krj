@@ -1,3 +1,10 @@
+## More utilities
+
+Finally, we have some utilities which hopefully explain themselves in code.
+
+There's little point in replacing code comments or documentation strings with 
+literate programming.
+
 <<main>>
 (ns kirja.util
   (:require [clojure.java.io :as io])
