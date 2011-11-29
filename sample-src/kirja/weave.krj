@@ -45,8 +45,8 @@ and the Javascript which dynamically builds the site when user browses it.
 
 Weaving a single file is straightforward. File is first converted to a 
 sequence of chunks,
-either code or documentation. Chunks are then formatted as markdwon then 
-converted to HTML and written out.
+either code or documentation. Chunks are formatted as markdown and then 
+converted to HTML and finally written out.
 
 The chunking process (function `chunk-stream`) is described later in more detail.
 
@@ -86,7 +86,7 @@ and `body` containing a sequence of lines. Code chunks also have a `name`.
 <<end>>
 
 Resources are read from the classpath and copied in the documentation directory.
-Since classpath does not really provide for browsing, resurces must be 
+Since classpath does not really provide for browsing, resources must be 
 explicitly listed in a fixed-name resource, called `resources-list`.
 
 <<resource-copy>>
@@ -105,7 +105,7 @@ explicitly listed in a fixed-name resource, called `resources-list`.
 
 The structure of the file is always listed under the `<<main>>` chunk. 
 The code expansion (tangling) works by expanding this section. All other 
-code in this files must be included using the `<<include: >>` tags.
+code in this files must be included using the `<<include >>` tags.
 
 <<main>>
 (ns kirja.weave
