@@ -1,31 +1,20 @@
-<<main>>
-(ns kirja.common
-  (:require [clojure.string :as str])
-  (:import [java.io File]))
+## Utilities common to both weaving and tangling
 
-(defn output-file
-  "returns output file corresponding to source file"
-  [^File source-file ^File source-dir ^File output-dir ^String suffix]
-  (let [source-path (.getAbsolutePath source-file)
-        source-dir-path (.getAbsolutePath source-dir)
-        output-dir-path (.getAbsolutePath output-dir)
-        output-path (-> source-path
-                        (str/replace source-dir-path output-dir-path)
-                        (str/replace #"\.[^\.]*$" suffix))
-        output-file (File. output-path)
-        parent-dir (.getParentFile output-file)]
-    (.mkdirs parent-dir)
-    output-file))
+### Parsing chunks
 
-(defn is-our-src?
-  [^File f]
-  (and (.isFile f)
-       (.endsWith (.getName f) ".krj")))
+Parsing chunks, doucumentation and code, from a file is slightly complicated. 
+The chosen notation is bit inconsistent. Consider detecting the end of a chunk,
+for example. Code block ends with the `<<end>>` line, which logically belongs
+to the chunk but a documentation block ends with the starting tag of the next 
+code block, which no longer belongs to the on-going chunk.
 
-(defn source-files
-  [^File dir]
-  (filter is-our-src? (file-seq dir)))
+Therefore it feels appropriate to handle parsing with different states. Such state 
+is a protocol with method for parsing lines.
 
+Note the chunk representation. A chunk is a map with keys `type` and `body` (and 
+`name` for code chunks).
+
+<<parsing-states>>
 (defprotocol State
   "Parse state"
   (modeTag [this] "returns state discriminator")
@@ -60,7 +49,12 @@
   (modeTag [this] :eof)
   (parse [this lines]
          [[] []]))
-  
+<<end>>
+
+Armed with these states parsing is quite simple. Each state consumes lines from the
+file.
+
+<<chunk-parsing>>
 (defn get-state
   "which mode starts with line? Code blocks start with <<name>>, all other contents indicate doc mode."
   [line]
@@ -78,8 +72,48 @@
       (lazy-seq (cons
                  chunk
                  (chunk-stream remaining-lines))))))
+<<end>>
 
+### File path utilities
 
+Next, we need some utilities for detecting our source files and
+manipulating our paths.
+
+<<source-file-utils>>
+(defn output-file
+  "returns output file corresponding to source file"
+  [^File source-file ^File source-dir ^File output-dir ^String suffix]
+  (let [source-path (.getAbsolutePath source-file)
+        source-dir-path (.getAbsolutePath source-dir)
+        output-dir-path (.getAbsolutePath output-dir)
+        output-path (-> source-path
+                        (str/replace source-dir-path output-dir-path)
+                        (str/replace #"\.[^\.]*$" suffix))
+        output-file (File. output-path)
+        parent-dir (.getParentFile output-file)]
+    (.mkdirs parent-dir)
+    output-file))
+
+(defn is-our-src?
+  [^File f]
+  (and (.isFile f)
+       (.endsWith (.getName f) ".krj")))
+
+(defn source-files
+  [^File dir]
+  (filter is-our-src? (file-seq dir)))
+<<end>>
+
+### Fixed point
+
+Code chunk expansion works by repeatedly expanding chunk bodies until
+all include-referencies have been expanded and the content no longer
+changes.
+
+Mathematically this means looking for a fixed point for the expansion 
+function.
+
+<<fixed-point>>
 (defn first-repetition
   "return first immediately repeating element in sequence."
   [seq]
@@ -91,5 +125,17 @@
 is reached: the result no longer changes"
   [f input]
   (first-repetition (iterate f input)))
-  
+<<end>>
+
+File structure is as usual.
+
+<<main>>
+(ns kirja.common
+  (:require [clojure.string :as str])
+  (:import [java.io File]))
+
+<<include source-file-utils>>
+<<include parsing-states>>
+<<include chunk-parsing>>
+<<include fixed-point>>
 <<end>>

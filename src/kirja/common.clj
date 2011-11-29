@@ -59,7 +59,7 @@
   (modeTag [this] :eof)
   (parse [this lines]
          [[] []]))
-  
+
 (defn get-state
   "which mode starts with line? Code blocks start with <<name>>, all other contents indicate doc mode."
   [line]
@@ -78,7 +78,6 @@
                  chunk
                  (chunk-stream remaining-lines))))))
 
-
 (defn first-repetition
   "return first immediately repeating element in sequence."
   [seq]
@@ -90,4 +89,4 @@
 is reached: the result no longer changes"
   [f input]
   (first-repetition (iterate f input)))
-  
+
