@@ -1,37 +1,30 @@
-<<main>>
-(ns kirja.tangle
-  (:use [kirja.common :only [source-files
-                             chunk-stream
-                             output-file
-                             fixed-point]])
-  (:require [clojure.java.io :as io]
-            [clojure.string :as str])
-  (:import [java.io File]))
+## Tangle
 
-(defn body-to-str
-  [body]
-  (str (str/join "\n" body)
-       "\n"))
+Tangling is the other major operation in literate programming. The aim of tangling is to 
+produce cmpilable source code out of literate programming sources.
 
-(defn escape-backslash
-  [text]
-  (doall (str/replace text "\\" "\\\\")))
+In kirja each source file produces one clojure source file. The base name of the file 
+remains, just the file extension changes.
 
-(defn expand-includes
-  [chunks-map text]
-  (str/replace text #"(?m)^<<include (.*)>>" (fn [match] (if (= 1 (count match))
-                                                      (first match)
-                                                      (let [{body :body} (get chunks-map (second match))]
-                                                        (escape-backslash (body-to-str body)))))))
+<<tangle>>
+(defn tangle
+  [source-dir-name output-dir-name]
+  (println (str "tangle in " source-dir-name))
+  (let [source-dir (File. source-dir-name)
+        output-dir (File. output-dir-name)]
+    (for [source-f (source-files source-dir)]
+      (tangle-file source-f (output-file source-f source-dir output-dir ".clj")))))
+<<end>>
 
-(defn expand-chunk
-  "Given chunk and a mapping from chunk names to chunks, return the expanded
-code contents for chunk." 
-  [{body :body} chunks-map]
-  (fixed-point (partial expand-includes chunks-map)
-                    (body-to-str body)))
-  
+Tangling each file means extracting all source dode chunks in it and performing 
+expansion of included `<<include xxx>>` tags.
 
+For this purpose we need a map `code-chunks` that maps chunk names to their contents.
+
+Note that the expansion begins with chunk named `main`. Such chunk must exist in all files
+and expand to the code contents.
+
+<<tangle-file>>
 (defn collect-code-chunks
   "given a seq of chunks (doc or code), return a map mapping code chunk names to
 code chunks. Ignore doc chunks."
@@ -50,14 +43,60 @@ code chunks. Ignore doc chunks."
           main-chunk (get code-chunks "main")
           code (expand-chunk main-chunk code-chunks)]
       (.write out-writer code))))
+<<end>>
 
-(defn tangle
-  [source-dir-name output-dir-name]
-  (println (str "tangle in " source-dir-name))
-  (let [source-dir (File. source-dir-name)
-        output-dir (File. output-dir-name)]
-    (for [source-f (source-files source-dir)]
-      (tangle-file source-f (output-file source-f source-dir output-dir ".clj")))))
+Expanding chunks is quite simple. We just look for the relevant tag and replace
+the chunk contents in place.
 
+Note that since the expanded content may also contain other chunk references,
+this must be repeated until the result no longer changes. Hence the fixed-point 
+use.
 
+<<chunk-expansion>>
+(defn expand-includes
+  [chunks-map text]
+  (str/replace text #"(?m)^<<include (.*)>>" (fn [match] (if (= 1 (count match))
+                                                      (first match)
+                                                      (let [{body :body} (get chunks-map (second match))]
+                                                        (escape-backslash (body-to-str body)))))))
+
+(defn expand-chunk
+  "Given chunk and a mapping from chunk names to chunks, return the expanded
+code contents for chunk." 
+  [{body :body} chunks-map]
+  (fixed-point (partial expand-includes chunks-map)
+                    (body-to-str body)))
+<<end>>
+
+Small details are worth noting: since the expanded chunk contents are substituted 
+usign regular expression replace, the content needs to be escaped. Charater `\` has 
+a special role in replacement strings, therefore it must be doubled.
+
+<<details>>
+(defn body-to-str
+  [body]
+  (str (str/join "\n" body)
+       "\n"))
+
+(defn escape-backslash
+  [text]
+  (doall (str/replace text "\\" "\\\\")))
+<<end>>
+
+The overall structure of file provides little surprises.
+
+<<main>>
+(ns kirja.tangle
+  (:use [kirja.common :only [source-files
+                             chunk-stream
+                             output-file
+                             fixed-point]])
+  (:require [clojure.java.io :as io]
+            [clojure.string :as str])
+  (:import [java.io File]))
+
+<<include details>>
+<<include chunk-expansion>>
+<<include tangle-file>>
+<<include tangle>>
 <<end>>

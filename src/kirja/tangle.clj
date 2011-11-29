@@ -29,7 +29,6 @@ code contents for chunk."
   [{body :body} chunks-map]
   (fixed-point (partial expand-includes chunks-map)
                     (body-to-str body)))
-  
 
 (defn collect-code-chunks
   "given a seq of chunks (doc or code), return a map mapping code chunk names to
@@ -57,5 +56,4 @@ code chunks. Ignore doc chunks."
         output-dir (File. output-dir-name)]
     (for [source-f (source-files source-dir)]
       (tangle-file source-f (output-file source-f source-dir output-dir ".clj")))))
-
 
