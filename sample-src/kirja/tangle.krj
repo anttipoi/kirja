@@ -69,8 +69,8 @@ code contents for chunk."
 <<end>>
 
 Small details are worth noting: since the expanded chunk contents are substituted 
-usign regular expression replace, the content needs to be escaped. Charater `\` has 
-a special role in replacement strings, therefore it must be doubled.
+usign regular expression replace, the content needs to be escaped. Charaters `\` 
+and `$` have special roles in replacement strings, therefore they must be escaped.
 
 <<details>>
 (defn body-to-str
@@ -80,7 +80,9 @@ a special role in replacement strings, therefore it must be doubled.
 
 (defn escape-backslash
   [text]
-  (doall (str/replace text "\\" "\\\\")))
+  (doall (-> (str/replace text "\\" "\\\\")
+             (str/replace "$" "\\$"))))
+  
 <<end>>
 
 The overall structure of file provides little surprises.

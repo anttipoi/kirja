@@ -14,7 +14,9 @@
 
 (defn escape-backslash
   [text]
-  (doall (str/replace text "\\" "\\\\")))
+  (doall (-> (str/replace text "\\" "\\\\")
+             (str/replace "$" "\\$"))))
+  
 
 (defn expand-includes
   [chunks-map text]
