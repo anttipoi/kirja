@@ -1,0 +1,4 @@
+{ "title" : "Kirja -- Literate Programming with Markdown and Clojure",
+  "src-url": "http://github.com/anttipoi/kirja",
+  "contents" : ["kirja.weave", "kirja.tangle", "kirja.common", "kirja.util"]
+}

@@ -1,0 +1,109 @@
+<h2>Tangle</h2>
+
+<p>Tangling is the other major operation in literate programming. The aim of tangling is to 
+produce cmpilable source code out of literate programming sources.</p>
+
+<p>In kirja each source file produces one clojure source file. The base name of the file 
+remains, just the file extension changes.</p>
+
+<pre><code>&lt;&lt;tangle&gt;&gt;
+(defn tangle
+  [source-dir-name output-dir-name]
+  (println (str "tangle in " source-dir-name))
+  (let [source-dir (File. source-dir-name)
+        output-dir (File. output-dir-name)]
+    (for [source-f (source-files source-dir)]
+      (tangle-file source-f (output-file source-f source-dir output-dir ".clj")))))
+&lt;&lt;end&gt;&gt;
+</code></pre>
+
+<p>Tangling each file means extracting all source dode chunks in it and performing 
+expansion of included <code>&lt;&lt;include xxx&gt;&gt;</code> tags.</p>
+
+<p>For this purpose we need a map <code>code-chunks</code> that maps chunk names to their contents.</p>
+
+<p>Note that the expansion begins with chunk named <code>main</code>. Such chunk must exist in all files
+and expand to the code contents.</p>
+
+<pre><code>&lt;&lt;tangle-file&gt;&gt;
+(defn collect-code-chunks
+  "given a seq of chunks (doc or code), return a map mapping code chunk names to
+code chunks. Ignore doc chunks."
+  [chunks]
+  (into {} (filter identity
+                   (map (fn [{name :name :as ch}]
+                          (when name [name ch]))
+                        chunks))))
+
+(defn- tangle-file
+  [source-file output-file]
+  (println (str "tangling... " (.getName source-file) " into " (.getName output-file)))
+  (with-open [in-reader (io/reader source-file)
+              out-writer (io/writer output-file)]
+    (let [code-chunks (collect-code-chunks (chunk-stream (line-seq in-reader)))
+          main-chunk (get code-chunks "main")
+          code (expand-chunk main-chunk code-chunks)]
+      (.write out-writer code))))
+&lt;&lt;end&gt;&gt;
+</code></pre>
+
+<p>Expanding chunks is quite simple. We just look for the relevant tag and replace
+the chunk contents in place.</p>
+
+<p>Note that since the expanded content may also contain other chunk references,
+this must be repeated until the result no longer changes. Hence the fixed-point 
+use.</p>
+
+<pre><code>&lt;&lt;chunk-expansion&gt;&gt;
+(defn expand-includes
+  [chunks-map text]
+  (str/replace text #"(?m)^&lt;&lt;include (.*)&gt;&gt;" (fn [match] (if (= 1 (count match))
+                                                      (first match)
+                                                      (let [{body :body} (get chunks-map (second match))]
+                                                        (escape-backslash (body-to-str body)))))))
+
+(defn expand-chunk
+  "Given chunk and a mapping from chunk names to chunks, return the expanded
+code contents for chunk." 
+  [{body :body} chunks-map]
+  (fixed-point (partial expand-includes chunks-map)
+                    (body-to-str body)))
+&lt;&lt;end&gt;&gt;
+</code></pre>
+
+<p>Small details are worth noting: since the expanded chunk contents are substituted 
+usign regular expression replace, the content needs to be escaped. Charaters <code>\</code> 
+and <code>$</code> have special roles in replacement strings, therefore they must be escaped.</p>
+
+<pre><code>&lt;&lt;details&gt;&gt;
+(defn body-to-str
+  [body]
+  (str (str/join "\n" body)
+       "\n"))
+
+(defn escape-backslash
+  [text]
+  (doall (-&gt; (str/replace text "\\" "\\\\")
+             (str/replace "$" "\\$"))))
+
+&lt;&lt;end&gt;&gt;
+</code></pre>
+
+<p>The overall structure of file provides little surprises.</p>
+
+<pre><code>&lt;&lt;main&gt;&gt;
+(ns kirja.tangle
+  (:use [kirja.common :only [source-files
+                             chunk-stream
+                             output-file
+                             fixed-point]])
+  (:require [clojure.java.io :as io]
+            [clojure.string :as str])
+  (:import [java.io File]))
+
+&lt;&lt;include details&gt;&gt;
+&lt;&lt;include chunk-expansion&gt;&gt;
+&lt;&lt;include tangle-file&gt;&gt;
+&lt;&lt;include tangle&gt;&gt;
+&lt;&lt;end&gt;&gt;
+</code></pre>

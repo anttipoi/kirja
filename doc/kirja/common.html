@@ -1,0 +1,146 @@
+<h2>Utilities common to both weaving and tangling</h2>
+
+<h3>Parsing chunks</h3>
+
+<p>Parsing chunks, doucumentation and code, from a file is slightly complicated. 
+The chosen notation is bit inconsistent. Consider detecting the end of a chunk,
+for example. Code block ends with the <code>&lt;&lt;end&gt;&gt;</code> line, which logically belongs
+to the chunk but a documentation block ends with the starting tag of the next 
+code block, which no longer belongs to the on-going chunk.</p>
+
+<p>Therefore it feels appropriate to handle parsing with different states. Such state 
+is a protocol with method for parsing lines.</p>
+
+<p>Note the chunk representation. A chunk is a map with keys <code>type</code> and <code>body</code> (and 
+<code>name</code> for code chunks).</p>
+
+<pre><code>&lt;&lt;parsing-states&gt;&gt;
+(defprotocol State
+  "Parse state"
+  (modeTag [this] "returns state discriminator")
+  (parse [this lines] "parses lines. Returns pair: parsed chunk and remaining lines."))
+
+(deftype CodeState []
+  State
+  (modeTag [this] :code)
+  (parse [this lines]
+    (let [chunk-name (nth (re-matches #"&lt;&lt;(.*)&gt;&gt;" (first lines)) 1)
+          chunk-lines (take-while #(not (re-matches #"&lt;&lt;end&gt;&gt;" %)) (rest lines))
+          code-chunk {:type :code
+                      :name chunk-name
+                      :body chunk-lines}
+          remaining-lines (drop (+ 2 (count chunk-lines)) lines)]
+      [code-chunk remaining-lines])))
+
+(deftype DocState []
+  State
+  (modeTag [this] :doc)
+  (parse [this lines]
+    (let [lines-until-code (take-while #(not (re-matches #"&lt;&lt;.*&gt;&gt;" %)) lines)
+          doc-chunk {:type :doc
+                     :body lines-until-code}
+          remaining-lines (drop (count lines-until-code) lines)]
+      [doc-chunk remaining-lines])))
+
+;; signal state for End-of-file
+(deftype EofState  
+  []
+  State
+  (modeTag [this] :eof)
+  (parse [this lines]
+         [[] []]))
+&lt;&lt;end&gt;&gt;
+</code></pre>
+
+<p>Armed with these states parsing is quite simple. Each state consumes lines from the
+file.</p>
+
+<pre><code>&lt;&lt;chunk-parsing&gt;&gt;
+(defn get-state
+  "which mode starts with line? Code blocks start with &lt;&lt;name&gt;&gt;, all other contents indicate doc mode."
+  [line]
+  (cond (nil? line) (EofState.)
+        (re-matches #"^&lt;&lt;.*&gt;&gt;" line) (CodeState.)
+        true (DocState.)))
+
+(defn chunk-stream
+  [lines]
+  (let [state (get-state (first lines))
+        [chunk remaining-lines] (.parse state lines)
+        mode (.modeTag state)]
+    (if (= mode :eof)
+      []
+      (lazy-seq (cons
+                 chunk
+                 (chunk-stream remaining-lines))))))
+&lt;&lt;end&gt;&gt;
+</code></pre>
+
+<h3>File path utilities</h3>
+
+<p>Next, we need some utilities for detecting our source files and
+manipulating our paths.</p>
+
+<pre><code>&lt;&lt;source-file-utils&gt;&gt;
+(defn output-file
+  "returns output file corresponding to source file"
+  [^File source-file ^File source-dir ^File output-dir ^String suffix]
+  (let [source-path (.getAbsolutePath source-file)
+        source-dir-path (.getAbsolutePath source-dir)
+        output-dir-path (.getAbsolutePath output-dir)
+        output-path (-&gt; source-path
+                        (str/replace source-dir-path output-dir-path)
+                        (str/replace #"\.[^\.]*$" suffix))
+        output-file (File. output-path)
+        parent-dir (.getParentFile output-file)]
+    (.mkdirs parent-dir)
+    output-file))
+
+(defn is-our-src?
+  [^File f]
+  (and (.isFile f)
+       (.endsWith (.getName f) ".krj")))
+
+(defn source-files
+  [^File dir]
+  (filter is-our-src? (file-seq dir)))
+&lt;&lt;end&gt;&gt;
+</code></pre>
+
+<h3>Fixed point</h3>
+
+<p>Code chunk expansion works by repeatedly expanding chunk bodies until
+all include-referencies have been expanded and the content no longer
+changes.</p>
+
+<p>Mathematically this means looking for a fixed point for the expansion 
+function.</p>
+
+<pre><code>&lt;&lt;fixed-point&gt;&gt;
+(defn first-repetition
+  "return first immediately repeating element in sequence."
+  [seq]
+  (first (first (filter (fn [[x y]] (= x y))
+                        (partition 2 1 seq)))))
+
+(defn fixed-point
+  "invoke f on the input, then repeatedly on the result. Stop when fixed point
+is reached: the result no longer changes"
+  [f input]
+  (first-repetition (iterate f input)))
+&lt;&lt;end&gt;&gt;
+</code></pre>
+
+<p>File structure is as usual.</p>
+
+<pre><code>&lt;&lt;main&gt;&gt;
+(ns kirja.common
+  (:require [clojure.string :as str])
+  (:import [java.io File]))
+
+&lt;&lt;include source-file-utils&gt;&gt;
+&lt;&lt;include parsing-states&gt;&gt;
+&lt;&lt;include chunk-parsing&gt;&gt;
+&lt;&lt;include fixed-point&gt;&gt;
+&lt;&lt;end&gt;&gt;
+</code></pre>

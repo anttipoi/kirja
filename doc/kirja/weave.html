@@ -1,0 +1,132 @@
+<h1>Literate Programming</h1>
+
+<p>Literate Programming is an approach to coding where documentation and code are 
+produced together from a common source. Author writes a narrative that explains
+the problem and solution to reader, and in the process introduces the program.</p>
+
+<p>Literate Programming was conceived by Donald Knuth and the most famous 
+product built using literate programming is probably his TeX typesetting system.</p>
+
+<p>Generating the actual source code is known as <em>tangling</em> and is described later.</p>
+
+<p>Generating documentation from the literate programming source is called <em>weaving</em>.</p>
+
+<h2>Source</h2>
+
+<p>Source files for Kirja are <code>.krj</code> files. They contain documentation using
+Markdown markup notation. They also contain the source code embedded using
+special notation with angle brackets <code>&lt;&lt;&gt;&gt;</code>.</p>
+
+<h2>Weave</h2>
+
+<p>The process for weaving documentation produces HTML-files from sources. Each 
+source file generates one HTML file.</p>
+
+<p>In addition to the generated HTML the resulting site contains an index-file
+(<code>catalog.index</code>), which describes the contents of the project. Most importantly
+it specifies in which order the HTML files should be assembled to form a book. </p>
+
+<p>Other fixed resources for project contain the static HTML index file, CSS files 
+and the Javascript which dynamically builds the site when user browses it.</p>
+
+<pre><code>&lt;&lt;weave&gt;&gt;
+(defn weave
+  [source-dir-name output-dir-name]
+  (println (str "weave in " source-dir-name))
+  (let [source-dir (File. source-dir-name)
+        output-dir (File. output-dir-name)]
+    (doall
+     (for [source-f (source-files source-dir)]
+       (weave-file source-f (output-file source-f source-dir output-dir ".html"))))
+    (copy-file (File. source-dir "catalog.index")
+               (File. output-dir "catalog.index"))
+    (copy-resources (read-resource-names) output-dir)))
+&lt;&lt;end&gt;&gt;
+</code></pre>
+
+<p>Weaving a single file is straightforward. File is first converted to a 
+sequence of chunks,
+either code or documentation. Chunks are formatted as markdown and then 
+converted to HTML and finally written out.</p>
+
+<p>The chunking process (function <code>chunk-stream</code>) is described later in more detail.</p>
+
+<pre><code>&lt;&lt;weave-file&gt;&gt;
+(defn- weave-file
+  [source-file output-file]
+  (println (str "weaving... " (.getName source-file) " into " (.getName output-file)))
+  (with-open [in-reader (io/reader source-file)
+              out-writer (io/writer output-file)]
+    (let [chunks (chunk-stream (line-seq in-reader))
+          doc-converted (str/join "\n" (convert-code-chunks chunks))
+          mdp (MarkdownProcessor.)]
+      (.write out-writer (.markdown mdp doc-converted)))))
+&lt;&lt;end&gt;&gt;
+</code></pre>
+
+<p>Conversion of chunks is simple. Documentation chunks are already in Markdown notation and 
+they are printed as such. Code chunks are indented, which in Markdown results in 
+block quote style.</p>
+
+<p>Note the chunk representation in code. 
+A chunk is a map with key <code>type</code> either <code>doc</code> or <code>code</code> 
+and <code>body</code> containing a sequence of lines. Code chunks also have a <code>name</code>.</p>
+
+<pre><code>&lt;&lt;converting&gt;&gt;
+(defn chunk-to-md
+  [{:keys [type name body]}]
+  (if (= type :doc)
+    (str/join "\n" body)
+    (str/join "\n" (concat
+                    [(str "    &lt;&lt;" name "&gt;&gt;")]
+                    (map #(str "    " %) body)
+                    ["    &lt;&lt;end&gt;&gt;"]))))
+
+(defn convert-code-chunks
+  [chunks]
+  (map chunk-to-md chunks))
+&lt;&lt;end&gt;&gt;
+</code></pre>
+
+<p>Resources are read from the classpath and copied in the documentation directory.
+Since classpath does not really provide for browsing, resources must be 
+explicitly listed in a fixed-name resource, called <code>resources-list</code>.</p>
+
+<pre><code>&lt;&lt;resource-copy&gt;&gt;
+(defn read-resource-names
+  "returns resource name vector from resource-list file on classpath"
+  []
+  (with-resource-stream [st "resources-list"]
+    (read (PushbackReader. (io/reader st)))))
+
+(defn copy-resources
+  [resource-names output-dir]
+  (println "copying resources ")
+  (for [r resource-names]
+    (copy-resource r (File. output-dir r))))
+&lt;&lt;end&gt;&gt;
+</code></pre>
+
+<p>The structure of the file is always listed under the <code>&lt;&lt;main&gt;&gt;</code> chunk. 
+The code expansion (tangling) works by expanding this section. All other 
+code in this files must be included using the <code>&lt;&lt;include &gt;&gt;</code> tags.</p>
+
+<pre><code>&lt;&lt;main&gt;&gt;
+(ns kirja.weave
+  (:use [kirja.common :only [source-files
+                             chunk-stream
+                             output-file]]
+        [kirja.util :only [ensure-parent-directories-exist
+                           with-resource-stream
+                           copy-resource
+                           copy-file]])
+  (:require [clojure.java.io :as io]
+            [clojure.string :as str])
+  (:import [java.io File PushbackReader]
+           [com.petebevin.markdown MarkdownProcessor]))
+&lt;&lt;include converting&gt;&gt;
+&lt;&lt;include weave-file&gt;&gt;
+&lt;&lt;include resource-copy&gt;&gt;
+&lt;&lt;include weave&gt;&gt;
+&lt;&lt;end&gt;&gt;
+</code></pre>
